@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth, googleProvider } from './firebase';
-import { QrCode, Activity, MapPin, Plus, LogOut, Lock } from 'lucide-react';
+import { QrCode, Activity, MapPin, Plus, LogOut, Sun, Moon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import './index.css';
+
+// Recharts colors
+const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444'];
 
 function App() {
   const [totalScans, setTotalScans] = useState(0);
@@ -19,6 +23,18 @@ function App() {
   // New state for location creation
   const [newLocationId, setNewLocationId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Theme State
+  const [theme, setTheme] = useState('light');
+
+  // Sync theme with document root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   // Handle Firebase Auth 
   useEffect(() => {
@@ -128,12 +144,12 @@ function App() {
     }
   };
 
-  // 1. Loading State (Checking Authentication Status)
+  // 1. Loading State
   if (authLoading) {
     return (
-      <div className="dashboard-container">
-        <div className="status-indicator">
-          <div className="pulse"></div>
+      <div className="auth-wrapper">
+        <div className="status-loader">
+          <div className="spinner"></div>
           Authenticating...
         </div>
       </div>
@@ -143,17 +159,11 @@ function App() {
   // 2. Unauthenticated State (Completely lock down dashboard)
   if (!user) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <h1 className="floating-icon">Event QR Analytics</h1>
-          <p>Restricted Dashboard</p>
-        </div>
-
-        <div className="auth-container">
+      <div className="auth-wrapper">
+        <div className="auth-card">
           <div className="auth-header">
-            <Lock size={20} color="#94a3b8" />
-            <h3>Authentication Required</h3>
-            <p>Connect your Google account to proceed</p>
+            <h2>QR Analytics Dashboard</h2>
+            <p>Sign in to monitor real-time engagement</p>
           </div>
 
           <button
@@ -167,101 +177,189 @@ function App() {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
-            {isLoggingIn ? 'Redirecting...' : 'Sign in with Google'}
+            {isLoggingIn ? 'Connecting...' : 'Sign in with Google'}
           </button>
-        </div>
 
-        {error && (
-          <div className="error-message">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
+          {error && (
+            <div className="error-message">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // 3. Authenticated State (Full Dashboard)
+  // 3. Authenticated State (Full Dashboard UI)
+
+  // Format data for Recharts
+  const chartData = locations
+    .filter(loc => loc.scans > 0)
+    .map(loc => ({
+      name: loc.id.replace(/_/g, ' '),
+      value: loc.scans
+    }));
+
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1 className="floating-icon">Event QR Analytics</h1>
-        <p>Real-time Engagement Monitoring</p>
-      </div>
-
-      <div className="admin-header">
-        <span className="admin-badge">
-          {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} />}
-          {user.displayName || user.email}
-        </span>
-        <button onClick={handleLogout} className="logout-button">
-          <LogOut size={16} /> Logout
-        </button>
-      </div>
-
-      <div className="metric-card" style={{ marginTop: '2rem' }}>
-        {loading ? (
-          <div className="scan-count" style={{ opacity: 0.5 }}>...</div>
-        ) : (
-          <div className="scan-count">{totalScans.toLocaleString()}</div>
-        )}
-        <div className="scan-label">
-          <QrCode size={24} color="#3b82f6" />
-          Global Total Scans
-        </div>
-      </div>
-
-      <div className="status-indicator">
-        <div className="pulse"></div>
-        <Activity size={16} />
-        Live Connection Active
-      </div>
-
-      {!loading && !error && (
-        <form className="add-location-form" onSubmit={handleAddLocation}>
-          <input
-            type="text"
-            className="location-input"
-            value={newLocationId}
-            onChange={(e) => setNewLocationId(e.target.value)}
-            placeholder="e.g. main gate, library"
-            disabled={isSubmitting}
-            required
-          />
-          <button
-            type="submit"
-            className="add-button"
-            disabled={isSubmitting || !newLocationId.trim()}
-          >
-            <Plus size={18} />
-            {isSubmitting ? 'Adding...' : 'Add Location'}
-          </button>
-        </form>
-      )}
-
-      {!loading && locations.length > 0 && (
-        <div className="locations-wrapper">
-          <h3 className="locations-title">Scans by Location</h3>
-          <div className="locations-list">
-            {locations.map((loc) => (
-              <div key={loc.id} className="location-item">
-                <div className="location-info">
-                  <MapPin size={18} color="#a78bfa" />
-                  <span className="location-name">{loc.id.replace(/_/g, ' ')}</span>
-                </div>
-                <div className="location-score">
-                  {loc.scans.toLocaleString()}
-                </div>
-              </div>
-            ))}
+    <div className="app-wrapper">
+      {/* Top Header */}
+      <nav className="top-nav">
+        <div className="nav-brand">
+          <div style={{ background: 'var(--accent-primary)', padding: '6px', borderRadius: '8px' }}>
+            <Activity size={24} color="white" />
           </div>
+          <h1>QR Analytics</h1>
         </div>
-      )}
 
-      {error && (
-        <div className="error-message">
-          <strong>Setup Required:</strong> {error}
+        <div className="nav-actions">
+          <button onClick={toggleTheme} className="icon-btn" aria-label="Toggle Theme">
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+
+          <div className="user-info">
+            <span className="user-name">{user.displayName || 'Admin User'}</span>
+            <span className="user-role">{user.email}</span>
+          </div>
+
+          {user.photoURL ? (
+            <img src={user.photoURL} alt="Profile" className="profile-pic" />
+          ) : (
+            <div className="profile-pic" style={{ background: 'var(--accent-primary)' }}></div>
+          )}
+
+          <button onClick={handleLogout} className="icon-btn" aria-label="Logout" style={{ color: '#ef4444' }}>
+            <LogOut size={20} />
+          </button>
         </div>
-      )}
+      </nav>
+
+      {/* Main 2-Column Grid */}
+      <div className="dashboard-grid">
+
+        {/* Left Column: Sidebar Locations List */}
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2>Tracked Locations</h2>
+            <MapPin size={20} color="var(--text-secondary)" />
+          </div>
+
+          <div className="locations-list">
+            {loading ? (
+              <div className="status-loader"><div className="spinner"></div></div>
+            ) : locations.length > 0 ? (
+              locations.map((loc, index) => (
+                <div key={loc.id} className="location-item">
+                  <div className="location-info">
+                    <span className="location-name">{loc.id.replace(/_/g, ' ')}</span>
+                    <span className="location-subtext">Route id: {loc.id}</span>
+                  </div>
+                  <div className="location-score">
+                    {loc.scans.toLocaleString()}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem 0' }}>
+                No active locations found.
+              </div>
+            )}
+          </div>
+
+          {/* Location Creation Form at Bottom of Sidebar */}
+          <form className="add-location-form" onSubmit={handleAddLocation}>
+            <input
+              type="text"
+              className="location-input"
+              value={newLocationId}
+              onChange={(e) => setNewLocationId(e.target.value)}
+              placeholder="Deploy new marker..."
+              disabled={isSubmitting}
+              required
+            />
+            <button
+              type="submit"
+              className="add-button"
+              disabled={isSubmitting || !newLocationId.trim()}
+              title="Add Location"
+            >
+              <Plus size={20} />
+            </button>
+          </form>
+        </aside>
+
+        {/* Right Column: Analytics & Visualization */}
+        <main className="main-content">
+          <div className="cards-row">
+            {/* Total Scans Card */}
+            <div className="highlight-card card-scans">
+              <div className="card-header">
+                <h3 className="card-title">Global Activity</h3>
+                <div className="card-icon"><Activity size={20} color="#be185d" /></div>
+              </div>
+              <div>
+                <p className="card-value">{totalScans.toLocaleString()}</p>
+                <p className="card-subtitle">Total Valid Scans Recorded</p>
+              </div>
+            </div>
+
+            {/* Active Nodes Card */}
+            <div className="highlight-card card-activity">
+              <div className="card-header">
+                <h3 className="card-title">Active Nodes</h3>
+                <div className="card-icon"><QrCode size={20} color="#047857" /></div>
+              </div>
+              <div>
+                <p className="card-value">{locations.length}</p>
+                <p className="card-subtitle">Active Deployed Locations</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Section */}
+          <div className="chart-section">
+            <div className="chart-header">
+              <div>
+                <h3 className="chart-title">Traffic Distribution</h3>
+                <span className="chart-subtitle">Relative performance of all deployment zones</span>
+              </div>
+            </div>
+
+            <div className="pie-chart-container">
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '12px',
+                        border: 'none',
+                        boxShadow: 'var(--shadow-md)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)'
+                      }}
+                    />
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ color: 'var(--text-secondary)' }}>Awaiting scan data to generate visuals...</div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
