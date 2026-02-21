@@ -61,6 +61,35 @@ function App() {
     }
   }, []);
 
+  // Listen to Auth State
+  useEffect(() => {
+    if (!import.meta.env.VITE_FIREBASE_PROJECT_ID) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      setEmail('');
+      setPassword('');
+    } catch (err) {
+      console.error("Login mapping error:", err);
+      setError("Invalid admin credentials.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = () => signOut(auth);
+
   const handleAddLocation = async (e) => {
     e.preventDefault();
     const formattedId = newLocationId.trim().toLowerCase().replace(/\s+/g, '_');
@@ -115,26 +144,66 @@ function App() {
         Live Connection Active
       </div>
 
-      {!loading && !error && (
-        <form className="add-location-form" onSubmit={handleAddLocation}>
-          <input
-            type="text"
-            className="location-input"
-            value={newLocationId}
-            onChange={(e) => setNewLocationId(e.target.value)}
-            placeholder="e.g. main gate, library"
-            disabled={isSubmitting}
-            required
-          />
-          <button
-            type="submit"
-            className="add-button"
-            disabled={isSubmitting || !newLocationId.trim()}
-          >
-            <Plus size={18} />
-            {isSubmitting ? 'Adding...' : 'Add Location'}
-          </button>
-        </form>
+      {!loading && !error && !user && (
+        <div className="auth-container">
+          <div className="auth-header">
+            <Lock size={20} color="#94a3b8" />
+            <h3>Admin Access Required</h3>
+            <p>Login to pre-initialize new locations</p>
+          </div>
+          <form className="auth-form" onSubmit={handleLogin}>
+            <input
+              type="email"
+              placeholder="Admin Email"
+              className="location-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className="location-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="submit" className="add-button" disabled={isLoggingIn}>
+              <LogIn size={18} />
+              {isLoggingIn ? 'Logging in...' : 'Login Securely'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {!loading && !error && user && (
+        <div className="admin-panel">
+          <div className="admin-header">
+            <span className="admin-badge">Admin Authenticated</span>
+            <button onClick={handleLogout} className="logout-button">
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
+          <form className="add-location-form" onSubmit={handleAddLocation}>
+            <input
+              type="text"
+              className="location-input"
+              value={newLocationId}
+              onChange={(e) => setNewLocationId(e.target.value)}
+              placeholder="e.g. main gate, library"
+              disabled={isSubmitting}
+              required
+            />
+            <button
+              type="submit"
+              className="add-button"
+              disabled={isSubmitting || !newLocationId.trim()}
+            >
+              <Plus size={18} />
+              {isSubmitting ? 'Adding...' : 'Add Location'}
+            </button>
+          </form>
+        </div>
       )}
 
       {!loading && locations.length > 0 && (

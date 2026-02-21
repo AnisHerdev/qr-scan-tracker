@@ -22,13 +22,22 @@ Open `dashboard/.env` and paste your Firebase API keys.
 
 Also, open `public/index.html` and replace the `firebaseConfig` object variables and the `TARGET_URL` (the page users should be routed to after counting the scan).
 
-### 3. Initialize Location Trackers
-To prevent abuse, external users scanning QR codes **cannot** create new locations in the database. They can only increment locations that already exist.
+### 3. Setup Admin Authentication
+To protect location creation, the dashboard now enforces Firebase Authentication. Users scanning QRs cannot generate garbage locations in your database.
 
-**To create your locations:**
-Simply run the dashboard locally (see the next step), and use the built-in **"Add Location"** form to create your tracking points (e.g., `main_gate`, `library`, `cafeteria`).
+**To create your secure Admin Account:**
+1. Go to your [Firebase Console](https://console.firebase.google.com/).
+2. Choose **Authentication** from the left sidebar.
+3. Click "Get Started" and enable the **Email/Password** provider.
+4. Go to the "Users" tab in Authentication and click **Add User**.
+5. Enter your email and a secure password.
 
-### 4. Generating the QR Codes
+### 4. Initialize Location Trackers
+Run the dashboard locally, and you will be met with a sleek login screen.
+1. Enter the Admin credentials you just created in the Firebase console.
+2. Upon successful login, use the **"Add Location"** form to create your tracking points (e.g., `main_gate`, `library`, `cafeteria`).
+
+### 5. Generating the QR Codes
 When generating QR Codes, just append the `?loc=` query parameter to your base URL:
 - Base QR: `https://your-domain.web.app/?loc=main_gate`
 - Library QR: `https://your-domain.web.app/?loc=library`

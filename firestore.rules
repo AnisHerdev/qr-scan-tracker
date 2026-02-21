@@ -6,9 +6,12 @@ service cloud.firestore {
       // Allow anyone to read the scan counts
       allow read: if true;
       
-      // Prevent direct creation entirely from the client side to stop spam URLs
-      // Locations must be pre-populated via the Admin Dashboard
-      allow create: if false;
+      // Prevent direct creation entirely from the external redirect client side
+      // Locations must be pre-populated via the Admin Dashboard.
+      // This enforces that only logged-in Firebase Auth users can create locations.
+      allow create: if request.auth != null && 
+                       request.resource.data.keys().hasAll(['scans']) &&
+                       request.resource.data.scans >= 0;
 
       // Allow updating an existing location if they only increment by 1
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scans', 'lastScanned']) &&
