@@ -20,8 +20,6 @@ function App() {
   const [newLocationId, setNewLocationId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-
   // Handle Firebase Auth 
   useEffect(() => {
     if (!import.meta.env.VITE_FIREBASE_PROJECT_ID) {
@@ -183,10 +181,6 @@ function App() {
   }
 
   // 3. Authenticated State (Full Dashboard)
-  // Check if current user is allowed to ADD locations
-  // (Optional email validation. If an email is supplied, check against it)
-  const isAdmin = !adminEmail || user.email === adminEmail;
-
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -222,7 +216,7 @@ function App() {
         Live Connection Active
       </div>
 
-      {!loading && !error && isAdmin && (
+      {!loading && !error && (
         <form className="add-location-form" onSubmit={handleAddLocation}>
           <input
             type="text"
@@ -242,13 +236,6 @@ function App() {
             {isSubmitting ? 'Adding...' : 'Add Location'}
           </button>
         </form>
-      )}
-
-      {/* Warning message if a non-admin validly logs in but can't add data */}
-      {!isAdmin && (
-        <div className="info-message" style={{ marginTop: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
-          Viewing as guest. Contact the administrator to manage location markers.
-        </div>
       )}
 
       {!loading && locations.length > 0 && (
