@@ -3,8 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /locations/{locationId} {
-      // Allow anyone to read the scan counts
-      allow read: if true;
+      // Require authentication to read the scan counts on the dashboard.
+      // The public index.html page only increments data and doesn't read it.
+      allow read: if request.auth != null;
       
       // Prevent direct creation entirely from the external redirect client side
       // Locations must be pre-populated via the Admin Dashboard.

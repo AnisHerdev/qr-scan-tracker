@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -21,3 +21,9 @@ export const db = getFirestore(app);
 
 // Initialize and export Firebase Auth
 export const auth = getAuth(app);
+
+// Initialize Google Auth Provider to force the Account Chooser Redirect
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
