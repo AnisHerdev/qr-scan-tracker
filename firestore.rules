@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /stats/qr_scans {
+      // Allow anyone to read the scan count
+      allow read: if true;
+      
+      // Allow update ONLY if:
+      // 1. It only modifies the 'scans' field
+      // 2. The new value is exactly the old value + 1
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scans']) &&
+                       request.resource.data.scans == resource.data.scans + 1;
+                       
+      // Prevent creating or deleting this document directly
+      allow create, delete: if false;
+    }
+  }
+}
