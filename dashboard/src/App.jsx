@@ -3,7 +3,7 @@ import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth, googleProvider } from './firebase';
 import { QrCode, Activity, MapPin, Plus, LogOut, Sun, Moon } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import './index.css';
 
 // Recharts colors
@@ -326,26 +326,35 @@ function App() {
 
             <div className="pie-chart-container">
               {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="90%" height={325}>
                   <PieChart>
                     <Tooltip
                       contentStyle={{
                         borderRadius: '12px',
-                        border: 'none',
+                        border: '2px solid',
                         boxShadow: 'var(--shadow-md)',
                         background: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)'
+                        padding: '10px',
+                        fontSize: '14px'
                       }}
+                      itemStyle={{ color: 'var(--text-primary)', fontWeight: '600' }}
+                      labelStyle={{ color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}
+                      cursor={{ fill: 'transparent' }}
                     />
+                    {/* <Legend verticalAlign="bottom" height={36} /> */}
                     <Pie
                       data={chartData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
+                      outerRadius={120}
+                      paddingAngle={2}
                       dataKey="value"
-                      stroke="none"
+                      stroke="var(--bg-secondary)"
+                      strokeWidth={2}
+                      label={({ name }) => name}
+                      animationBegin={0}
+                      animationDuration={1500}
                     >
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
