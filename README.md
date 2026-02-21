@@ -22,14 +22,11 @@ Open `dashboard/.env` and paste your Firebase API keys.
 
 Also, open `public/index.html` and replace the `firebaseConfig` object variables and the `TARGET_URL` (the page users should be routed to after counting the scan).
 
-### 3. Initialize Firestore Document(s)
-Unlike a single global counter, this system tracks multiple locations dynamically.
-In your Firebase Console, navigate to Firestore Database and manually create your first location to initialize the database structure:
-- Collection: `locations`
-- Document ID: `main_gate` (or any location name you want)
-- Field: `scans` (Type: Number, Value: `0`)
+### 3. Initialize Location Trackers
+To prevent abuse, external users scanning QR codes **cannot** create new locations in the database. They can only increment locations that already exist.
 
-*Note: Due to our strict security rules preventing abuse, a new location document is only automatically created if the first user's initial scan submits exactly `1` scan. Creating the first document manually ensures the collection exists.*
+**To create your locations:**
+Simply run the dashboard locally (see the next step), and use the built-in **"Add Location"** form to create your tracking points (e.g., `main_gate`, `library`, `cafeteria`).
 
 ### 4. Generating the QR Codes
 When generating QR Codes, just append the `?loc=` query parameter to your base URL:

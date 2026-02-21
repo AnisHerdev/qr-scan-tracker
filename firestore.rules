@@ -6,9 +6,9 @@ service cloud.firestore {
       // Allow anyone to read the scan counts
       allow read: if true;
       
-      // Allow creating a new location if they initialize it with exactly 1 scan
-      allow create: if request.resource.data.keys().hasAll(['scans']) &&
-                       request.resource.data.scans == 1;
+      // Prevent direct creation entirely from the client side to stop spam URLs
+      // Locations must be pre-populated via the Admin Dashboard
+      allow create: if false;
 
       // Allow updating an existing location if they only increment by 1
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scans', 'lastScanned']) &&

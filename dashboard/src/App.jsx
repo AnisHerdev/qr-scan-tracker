@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { QrCode, Activity, MapPin } from 'lucide-react';
+import { QrCode, Activity, MapPin, Plus } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -9,6 +9,10 @@ function App() {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // New state for location creation
+  const [newLocationId, setNewLocationId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Check if configuration is set by validating projectId exists
@@ -57,6 +61,35 @@ function App() {
     }
   }, []);
 
+  const handleAddLocation = async (e) => {
+    e.preventDefault();
+    const formattedId = newLocationId.trim().toLowerCase().replace(/\s+/g, '_');
+
+    if (!formattedId) return;
+
+    // Check if location already exists to avoid overwriting scans to 0
+    if (locations.find(loc => loc.id === formattedId)) {
+      alert("This location already exists!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const locationRef = doc(db, 'locations', formattedId);
+      // Initialize the new location with 0 scans
+      await setDoc(locationRef, {
+        scans: 0,
+        lastScanned: null
+      });
+      setNewLocationId('');
+    } catch (err) {
+      console.error("Error adding location:", err);
+      alert("Failed to add location. Check your permissions.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -81,6 +114,28 @@ function App() {
         <Activity size={16} />
         Live Connection Active
       </div>
+
+      {!loading && !error && (
+        <form className="add-location-form" onSubmit={handleAddLocation}>
+          <input
+            type="text"
+            className="location-input"
+            value={newLocationId}
+            onChange={(e) => setNewLocationId(e.target.value)}
+            placeholder="e.g. main gate, library"
+            disabled={isSubmitting}
+            required
+          />
+          <button
+            type="submit"
+            className="add-button"
+            disabled={isSubmitting || !newLocationId.trim()}
+          >
+            <Plus size={18} />
+            {isSubmitting ? 'Adding...' : 'Add Location'}
+          </button>
+        </form>
+      )}
 
       {!loading && locations.length > 0 && (
         <div className="locations-wrapper">
