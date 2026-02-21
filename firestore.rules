@@ -2,18 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /stats/qr_scans {
-      // Allow anyone to read the scan count
+    match /locations/{locationId} {
+      // Allow anyone to read the scan counts
       allow read: if true;
       
-      // Allow update ONLY if:
-      // 1. It only modifies the 'scans' field
-      // 2. The new value is exactly the old value + 1
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scans']) &&
+      // Allow creating a new location if they initialize it with exactly 1 scan
+      allow create: if request.resource.data.keys().hasAll(['scans']) &&
+                       request.resource.data.scans == 1;
+
+      // Allow updating an existing location if they only increment by 1
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scans', 'lastScanned']) &&
                        request.resource.data.scans == resource.data.scans + 1;
                        
-      // Prevent creating or deleting this document directly
-      allow create, delete: if false;
+      // Prevent deleting documents directly
+      allow delete: if false;
     }
   }
 }
+

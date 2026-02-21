@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './firebase';
-import { QrCode, Activity } from 'lucide-react';
+import { QrCode, Activity, MapPin } from 'lucide-react';
 import './index.css';
 
 function App() {
-  const [scans, setScans] = useState(0);
+  const [totalScans, setTotalScans] = useState(0);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,21 +19,32 @@ function App() {
     }
 
     try {
-      const statsRef = doc(db, 'stats', 'qr_scans');
+      const locationsRef = collection(db, 'locations');
 
-      // Setup realtime listener
-      const unsubscribe = onSnapshot(statsRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setScans(docSnap.data().scans || 0);
-          setError(null);
-        } else {
-          // Document doesn't exist yet, we'll wait for the first scan to create it
-          // OR it might need to be created manually by the admin first depending on rules
-          setScans(0);
-        }
+      // Setup realtime listener for the entire locations collection
+      const unsubscribe = onSnapshot(locationsRef, (snapshot) => {
+        let total = 0;
+        const locationsData = [];
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          total += (data.scans || 0);
+          locationsData.push({
+            id: doc.id,
+            scans: data.scans || 0,
+            lastScanned: data.lastScanned
+          });
+        });
+
+        // Sort locations by scan count (highest first)
+        locationsData.sort((a, b) => b.scans - a.scans);
+
+        setTotalScans(total);
+        setLocations(locationsData);
+        setError(null);
         setLoading(false);
       }, (err) => {
-        console.error("Error listening to stats:", err);
+        console.error("Error listening to locations:", err);
         setError("Missing permissions or connection error. Check your Firebase Rules.");
         setLoading(false);
       });
@@ -56,11 +68,11 @@ function App() {
         {loading ? (
           <div className="scan-count" style={{ opacity: 0.5 }}>...</div>
         ) : (
-          <div className="scan-count">{scans.toLocaleString()}</div>
+          <div className="scan-count">{totalScans.toLocaleString()}</div>
         )}
         <div className="scan-label">
           <QrCode size={24} color="#3b82f6" />
-          Total Scans
+          Global Total Scans
         </div>
       </div>
 
@@ -69,6 +81,25 @@ function App() {
         <Activity size={16} />
         Live Connection Active
       </div>
+
+      {!loading && locations.length > 0 && (
+        <div className="locations-wrapper">
+          <h3 className="locations-title">Scans by Location</h3>
+          <div className="locations-list">
+            {locations.map((loc) => (
+              <div key={loc.id} className="location-item">
+                <div className="location-info">
+                  <MapPin size={18} color="#a78bfa" />
+                  <span className="location-name">{loc.id.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="location-score">
+                  {loc.scans.toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="error-message">
