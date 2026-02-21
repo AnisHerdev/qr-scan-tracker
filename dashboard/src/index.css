@@ -503,10 +503,22 @@ body {
     padding: 1rem 0.5rem;
   }
 
+  .dashboard-grid {
+    gap: 14px;
+  }
+
+  .cards-row {
+    gap: 14px;
+  }
+
+  main.main-content {
+    gap: 14px;
+  }
+
   .top-nav {
     padding: 12px 16px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
     justify-content: center;
   }
 
@@ -520,15 +532,16 @@ body {
   }
 
   .app-wrapper {
-    gap: 16px;
+    gap: 14px;
   }
 
   .sidebar {
-    padding: 24px 16px;
+    padding: 24px 20px;
   }
 
   .highlight-card {
-    padding: 24px 20px;
+    padding: 20px 20px;
+    gap: 14px;
   }
 
   .card-value {
@@ -537,7 +550,7 @@ body {
   }
 
   .chart-section {
-    padding: 24px 16px;
+    padding: 24px 20px;
     min-height: 350px;
   }
 
