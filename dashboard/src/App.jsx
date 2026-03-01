@@ -326,8 +326,8 @@ function App() {
 
             <div className="pie-chart-container">
               {chartData.length > 0 ? (
-                <ResponsiveContainer width="90%" height={325}>
-                  <PieChart>
+                <ResponsiveContainer width="100%" height={325}>
+                  <PieChart margin={{ top: 0, right: window.innerWidth < 600 ? 40 : 0, left: window.innerWidth < 600 ? 40 : 0, bottom: 0 }}>
                     <Tooltip
                       contentStyle={{
                         borderRadius: '12px',
@@ -347,12 +347,12 @@ function App() {
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={120}
+                      outerRadius={window.innerWidth < 600 ? 80 : 120}
                       paddingAngle={2}
                       dataKey="value"
                       stroke="var(--bg-secondary)"
                       strokeWidth={2}
-                      label={({ name }) => name}
+                      label={({ name }) => (window.innerWidth < 600 && name.length > 12) ? `${name.substring(0, 10)}...` : name}
                       animationBegin={0}
                       animationDuration={1500}
                     >

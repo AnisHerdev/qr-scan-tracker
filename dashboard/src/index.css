@@ -492,6 +492,10 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .main-content {
+    order: -1;
+  }
+
   .cards-row {
     grid-template-columns: 1fr;
   }
@@ -570,7 +574,8 @@ body {
     display: flex;
     flex-direction: column;
   }
-  .google-btn{
+
+  .google-btn {
     padding: 10px 10px;
     width: 80%;
     justify-content: center;
